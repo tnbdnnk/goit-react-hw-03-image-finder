@@ -18,6 +18,7 @@ export class App extends Component {
         error: false,
         toast: false,
         loadMore: true,
+        totalHits: 0,
     };
 
     handleSearchImg = newImg => {
@@ -36,30 +37,25 @@ export class App extends Component {
     queryImgGallery = async (query, page, prevState) => {
         try {
             this.setState({ loading: true, error: false });
-        
-            const response = await fetchImageGallery(query, page);
-            console.log('Response:', response);
+            const res = await fetchImageGallery(query, page);
+            const { imageGallery } = this.state;
 
-            if (!response || response.length === 0) {
+            if (!res.hits || res.length === 0) {
                 toast.error('No images found, please change your search query', {
                     style: { width: '1000px', height: '60px' },
                 });
                 this.setState({ loading: false, loadMore: false });
             } else {
-                if (!this.state.toast && response.length > 0) {
+                if (!this.state.toast && res.hits.length > 0) {
                     toast.success('We found images');
                     this.setState({ toast: true });
                 }
-    
-                const newImages = response.filter(newImage => {
-                    return prevState.imageGallery.every(image => image.id !== newImage.id);
-                });
-    
                 this.setState(prevState => ({
-                    imageGallery: [...prevState.imageGallery, ...newImages],
-                    loadMore: page < Math.ceil(response.length / 12),
+                    imageGallery: [...imageGallery, ...res.hits],
+                    loadMore: page < Math.ceil(res.totalHits / 12),
                     loading: false,
                     error: false,
+                    totalHits: res.totalHits,
                 }));
             }
         } catch (error) {
